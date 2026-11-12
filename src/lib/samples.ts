@@ -52,3 +52,4 @@ export const GROUP_SAMPLE: ChatSample = {
 };
 
 export const CHAT_SAMPLES: ChatSample[] = [INDIVIDUAL_SAMPLE, GROUP_SAMPLE];
+

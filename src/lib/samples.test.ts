@@ -32,3 +32,4 @@ describe("preloaded chat samples (RF-02)", () => {
     expect(report.mandatory.dramaLevel.value).toBeGreaterThan(0);
   });
 });
+
