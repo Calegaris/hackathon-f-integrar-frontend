@@ -147,6 +147,7 @@ export type FallbackReason =
 export interface AnalyzeApiRequest {
   chatText: string;
   regenerateTone?: ResponseTone;
+  variantSeed?: number;
 }
 
 export interface AnalyzeApiResponse {
@@ -154,6 +155,7 @@ export interface AnalyzeApiResponse {
   responses: Record<ResponseTone, SuggestedResponse>;
   verdict: ReplyVerdict;
   source: AnalysisSource;
+  modelUsed?: string;
   fallbackReason?: FallbackReason;
 }
 
