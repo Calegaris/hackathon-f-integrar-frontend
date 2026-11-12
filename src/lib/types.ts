@@ -51,7 +51,8 @@ export type MetricId =
   | "laughlessJajaPercentage"
   | "audioCouldBeTextCount"
   | "lateNightPercentage"
-  | "gossipTemperature";
+  | "gossipTemperature"
+  | "fiacaLevel";
 
 export type MetricUnit =
   | "percent"
@@ -109,6 +110,56 @@ export interface DesirableMetrics {
   authorRanking: AuthorParticipation[];
 }
 
+export interface TimelinePoint {
+  label: string;
+  dramaScore: number;
+  gossipScore: number;
+}
+
+export interface PendingQuestion {
+  author: string;
+  question: string;
+  rawTime: string;
+  elapsedHours: number;
+  elapsedMinutes: number;
+  elapsedDisplayText: string;
+}
+
+export interface ReceivableItem {
+  author: string;
+  amountFormatted: string;
+  rawAmount: number;
+  concept: string;
+  dateHint: string;
+  sourceText: string;
+}
+
+export interface IdealReplyLength {
+  targetWords: number;
+  formattedTargetWords: string;
+  displayText: string;
+  counterpartyLabel: string;
+}
+
+export interface RecommendedReplyWindow {
+  recommendedTime: string;
+  elapsedPercentage: number;
+  formattedElapsedPercentage: string;
+  isReadyNow: boolean;
+  displayText: string;
+}
+
+export interface TacticalInsights {
+  perspectiveAuthor: string | null;
+  pendingQuestions: PendingQuestion[];
+  receivables: ReceivableItem[];
+  totalReceivablesFormatted: string;
+  idealReplyLength: IdealReplyLength;
+  recommendedReplyWindow: RecommendedReplyWindow;
+  fiacaLevel: FormattedMetric;
+  timelineSeries: TimelinePoint[];
+}
+
 export interface LocalAnalysisReport {
   caseNumber: string;
   chat: ParsedChat;
@@ -117,6 +168,7 @@ export interface LocalAnalysisReport {
   mandatory: MandatoryMetrics;
   /** Null when sample is insufficient so only M metrics are computed (RF-32). */
   desirable: DesirableMetrics | null;
+  insights: TacticalInsights;
 }
 
 export type ResponseTone = "diplomatic" | "passiveAggressive" | "neutral";

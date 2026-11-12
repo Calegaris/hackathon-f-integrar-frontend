@@ -1,41 +1,32 @@
+import {
+  buildMetric,
+  formatDurationMinutesSeconds,
+  formatTwoDecimals,
+  INSUFFICIENT_SAMPLE_NOTICE,
+  roundToTwo,
+} from "./metric-format";
+import {
+  computeDesirableMetrics,
+  computeTacticalInsights,
+} from "./metrics-desirable";
 import type {
-  FormattedMetric,
   LocalAnalysisReport,
   MandatoryMetrics,
-  MetricId,
   ParsedChat,
   ParsedMessage,
   SubstanceVsSmokeBreakdown,
 } from "./types";
 
+export {
+  buildMetric,
+  formatDurationMinutesSeconds,
+  formatTwoDecimals,
+  INSUFFICIENT_SAMPLE_NOTICE,
+  roundToTwo,
+};
+
 const READING_WPM = 238;
 const DEFAULT_SUMMARY_WORD_COUNT = 28;
-
-export const INSUFFICIENT_SAMPLE_NOTICE =
-  "Expediente archivado por falta de evidencia";
-
-const ZERO_COMMENTARIES: Record<MetricId, string> = {
-  fillerPercentage:
-    "0,00 %: eficiencia quirúrgica. Cero humo detectado en el expediente.",
-  lifeTimeSaved:
-    "00 minutos y 00,00 segundos: chat tan breve que tardaste más en abrir el expediente.",
-  dramaLevel:
-    "0,00 %: calma sospechosa. Ni un signo de exclamación ni mayúsculas.",
-  testamentIndex:
-    "Nivel de novela rusa: 0,00. Telegrama puro, cero vocación literaria.",
-  averageResponseTime:
-    "00 minutos y 00,00 segundos: monólogo detectado, no hubo intercambio entre autores.",
-  urgencyIndex:
-    "0,00 %: tranquilidad absoluta. Nadie pidió nada para ayer.",
-  laughlessJajaPercentage:
-    "0,00 %: chat sin una sola risa. Preocupante.",
-  audioCouldBeTextCount:
-    "0,00: milagro táctico, nadie mandó audios interminables.",
-  lateNightPercentage:
-    "0,00 %: horario de oficina impecable. Todos durmiendo entre las 2:00 y las 6:00.",
-  gossipTemperature:
-    "0,00: cero chisme detectado. Nivel de confidencialidad suizo.",
-};
 
 const USEFUL_DATE_TIME_REGEX =
   /\b(hoy|ma[ñn]ana|ayer|lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|mediod[ií]a|noche|tarde)\b|\b\d{1,2}[:/]\d{1,2}\b/i;
@@ -47,69 +38,6 @@ const USEFUL_ACTION_VERB_REGEX =
 
 const REPEATED_PUNCTUATION_REGEX = /!{2,}|\?{2,}|[!?]{2,}/g;
 const EMOJI_REGEX = /\p{Extended_Pictographic}/gu;
-
-/**
- * Rounds a number to 2 decimal places, treating non-finite or near-zero numbers cleanly.
- */
-export function roundToTwo(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
-  return Object.is(rounded, -0) ? 0 : rounded;
-}
-
-/**
- * Formats a number with exactly two decimal places using comma separator (RF-08).
- */
-export function formatTwoDecimals(value: number): string {
-  return roundToTwo(value).toFixed(2).replace(".", ",");
-}
-
-/**
- * Formats a duration in seconds as `mm minutos y ss,cc segundos` (RF-10, RF-27).
- */
-export function formatDurationMinutesSeconds(totalSeconds: number): string {
-  const safeSeconds = Math.max(0, Number.isFinite(totalSeconds) ? totalSeconds : 0);
-  let minutes = Math.floor(safeSeconds / 60);
-  let seconds = roundToTwo(safeSeconds - minutes * 60);
-
-  if (seconds >= 60) {
-    minutes += 1;
-    seconds = 0;
-  }
-
-  const mm = String(minutes).padStart(2, "0");
-  const sscc = formatTwoDecimals(seconds).padStart(5, "0");
-  return `${mm} minutos y ${sscc} segundos`;
-}
-
-function buildMetric(
-  id: MetricId,
-  label: string,
-  priority: "M" | "D" | "O",
-  rawValue: number,
-  unit: FormattedMetric["unit"],
-  nonZeroDisplay: (formattedValue: string, roundedValue: number) => string,
-): FormattedMetric {
-  const value = roundToTwo(rawValue);
-  const isZero = value === 0;
-  const formattedValue = formatTwoDecimals(value);
-  const zeroCommentary = isZero ? ZERO_COMMENTARIES[id] : null;
-  const displayText = isZero
-    ? ZERO_COMMENTARIES[id]
-    : nonZeroDisplay(formattedValue, value);
-
-  return {
-    id,
-    label,
-    priority,
-    value,
-    formattedValue,
-    unit,
-    displayText,
-    isZero,
-    zeroCommentary,
-  };
-}
 
 /**
  * Determines whether a message contains actionable or informative substance (RF-09).
@@ -138,7 +66,7 @@ function countUppercaseWords(text: string): number {
   return count;
 }
 
-function computeDramaScore(messages: ParsedMessage[], totalWords: number): number {
+export function computeDramaScore(messages: ParsedMessage[], totalWords: number): number {
   if (totalWords === 0) return 0;
 
   let uppercaseWords = 0;
@@ -163,7 +91,7 @@ function computeDramaScore(messages: ParsedMessage[], totalWords: number): numbe
   return Math.min(100, percentage);
 }
 
-function computeAverageResponseSeconds(messages: ParsedMessage[]): number {
+export function computeAverageResponseSeconds(messages: ParsedMessage[]): number {
   let totalDiffSeconds = 0;
   let transitions = 0;
 
@@ -199,6 +127,8 @@ export function buildCaseNumber(chat: ParsedChat): string {
 export interface ComputeAnalysisOptions {
   summaryWordCount?: number;
   caseNumber?: string;
+  perspectiveAuthor?: string;
+  referenceTime?: Date;
 }
 
 /**
@@ -303,6 +233,18 @@ export function analyzeParsedChat(
 ): LocalAnalysisReport {
   const mandatory = computeMandatoryMetrics(chat, options);
   const caseNumber = options.caseNumber ?? buildCaseNumber(chat);
+  const avgResponseSeconds = computeAverageResponseSeconds(chat.messages);
+
+  const desirable = chat.hasInsufficientSample
+    ? null
+    : computeDesirableMetrics(chat);
+
+  const insights = computeTacticalInsights(chat, {
+    perspectiveAuthor: options.perspectiveAuthor,
+    referenceTime: options.referenceTime,
+    averageResponseSeconds: avgResponseSeconds,
+    mandatory,
+  });
 
   return {
     caseNumber,
@@ -311,7 +253,7 @@ export function analyzeParsedChat(
       ? INSUFFICIENT_SAMPLE_NOTICE
       : null,
     mandatory,
-    // Desirable metrics will be attached in Phase 4 when chat has >= 5 messages.
-    desirable: null,
+    desirable,
+    insights,
   };
 }
