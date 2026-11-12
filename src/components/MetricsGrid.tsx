@@ -4,13 +4,13 @@ export interface MetricsGridProps {
   report: LocalAnalysisReport;
 }
 
-interface MetricCardProps {
+export interface MetricCardProps {
   code: string;
   metric: FormattedMetric;
   subtitle: string;
 }
 
-function MetricCard({ code, metric, subtitle }: MetricCardProps) {
+export function MetricCard({ code, metric, subtitle }: MetricCardProps) {
   return (
     <article className="flex flex-col justify-between rounded-lg border border-slate-800 bg-slate-900/80 p-4 shadow">
       <div>

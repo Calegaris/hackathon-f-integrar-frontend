@@ -27,6 +27,7 @@ export const INDIVIDUAL_SAMPLE: ChatSample = {
     "12/11/26, 10:15 - Martina: Dale!! Ahí reservo la sala y te confirmo.",
     "12/11/26, 10:16 - Martina: Ah y acordate que la impresión sale $12500 cada uno.",
     "12/11/26, 10:18 - Lucas: Perfecto, después te transfiero.",
+    "12/11/26, 17:10 - Martina: Che al final me transferís los $12.500 de la impresión antes del viernes?",
   ].join("\n"),
 };
 
@@ -48,6 +49,7 @@ export const GROUP_SAMPLE: ChatSample = {
     "11/11/26, 22:06 - Mili: Cuánto ponemos por cabeza? Avisen porfa así separo $18000",
     "11/11/26, 22:07 - Tomi: Calculen $15000 aprox cada uno, después pasamos el alias.",
     "11/11/26, 22:10 - Valen: Buenisimo jajaja",
+    "11/11/26, 22:12 - Mili: Che al final juntamos también $4.500 para la vaquita del regalo del viernes?",
   ].join("\n"),
 };
 

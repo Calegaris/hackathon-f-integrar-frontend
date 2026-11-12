@@ -11,9 +11,11 @@ import type {
   ResponseTone,
 } from "@/lib/types";
 import { ChatInputPanel } from "./ChatInputPanel";
+import { DesirableMetricsSection } from "./DesirableMetricsSection";
 import { DossierHeader } from "./DossierHeader";
 import { MetricsGrid } from "./MetricsGrid";
 import { SmokeVsSubstanceChart } from "./SmokeVsSubstanceChart";
+import { TacticalIntelPanel } from "./TacticalIntelPanel";
 import { TacticalResponsesPanel } from "./TacticalResponsesPanel";
 
 export function TacticalAnalyzerContainer() {
@@ -25,7 +27,9 @@ export function TacticalAnalyzerContainer() {
   const [regeneratingTone, setRegeneratingTone] = useState<ResponseTone | null>(
     null,
   );
+  const [talkativeness, setTalkativeness] = useState(50);
 
+  const perspectiveAuthorRef = useRef<string | undefined>(undefined);
   const variantSeedRef = useRef(0);
   const requestCounterRef = useRef(0);
 
@@ -41,6 +45,8 @@ export function TacticalAnalyzerContainer() {
 
     setErrorMessage(null);
     variantSeedRef.current = 0;
+    perspectiveAuthorRef.current = undefined;
+    setTalkativeness(50);
 
     // 1. Offline-first instant local fallback & mandatory metrics
     const immediateFallback = generateRuleBasedFallback(
@@ -74,6 +80,7 @@ export function TacticalAnalyzerContainer() {
           analyzeParsedChat(parsed.data, {
             caseNumber: initialReport.caseNumber,
             summaryWordCount: countWords(data.summary),
+            perspectiveAuthor: perspectiveAuthorRef.current,
           }),
         );
       }
@@ -100,13 +107,30 @@ export function TacticalAnalyzerContainer() {
 
   const handleReset = useCallback(() => {
     requestCounterRef.current += 1;
+    perspectiveAuthorRef.current = undefined;
     setChatText("");
     setErrorMessage(null);
     setReport(null);
     setAiAnalysis(null);
     setIsLoadingAi(false);
     setRegeneratingTone(null);
+    setTalkativeness(50);
   }, []);
+
+  const handleSelectPerspective = useCallback(
+    (author: string) => {
+      if (!report || !aiAnalysis) return;
+      perspectiveAuthorRef.current = author;
+      setReport(
+        analyzeParsedChat(report.chat, {
+          caseNumber: report.caseNumber,
+          summaryWordCount: countWords(aiAnalysis.summary),
+          perspectiveAuthor: author,
+        }),
+      );
+    },
+    [aiAnalysis, report],
+  );
 
   const handleRegenerateTone = useCallback(
     async (tone: ResponseTone) => {
@@ -207,8 +231,18 @@ export function TacticalAnalyzerContainer() {
               analysis={aiAnalysis}
               isLoadingAi={isLoadingAi}
               regeneratingTone={regeneratingTone}
+              talkativeness={talkativeness}
+              idealReplyHint={report.insights.idealReplyLength.displayText}
+              onChangeTalkativeness={setTalkativeness}
               onRegenerateTone={handleRegenerateTone}
             />
+
+            <TacticalIntelPanel
+              report={report}
+              onSelectPerspective={handleSelectPerspective}
+            />
+
+            <DesirableMetricsSection report={report} />
           </div>
         )}
       </main>

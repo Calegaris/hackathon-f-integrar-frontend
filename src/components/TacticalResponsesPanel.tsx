@@ -1,12 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { formatTwoDecimals } from "@/lib/metric-format";
+import {
+  adjustResponsesByTalkativeness,
+  getTalkativenessMode,
+} from "@/lib/talkativeness";
 import type { AnalyzeApiResponse, ResponseTone } from "@/lib/types";
 
 export interface TacticalResponsesPanelProps {
   analysis: AnalyzeApiResponse;
   isLoadingAi: boolean;
   regeneratingTone: ResponseTone | null;
+  talkativeness: number;
+  idealReplyHint: string;
+  onChangeTalkativeness: (nextValue: number) => void;
   onRegenerateTone: (tone: ResponseTone) => void;
 }
 
@@ -41,9 +49,17 @@ export function TacticalResponsesPanel({
   analysis,
   isLoadingAi,
   regeneratingTone,
+  talkativeness,
+  idealReplyHint,
+  onChangeTalkativeness,
   onRegenerateTone,
 }: TacticalResponsesPanelProps) {
   const [copiedTone, setCopiedTone] = useState<ResponseTone | null>(null);
+  const adaptedResponses = adjustResponsesByTalkativeness(
+    analysis.responses,
+    talkativeness,
+  );
+  const talkMode = getTalkativenessMode(talkativeness);
 
   const handleCopy = async (tone: ResponseTone, text: string) => {
     try {
@@ -119,10 +135,45 @@ export function TacticalResponsesPanel({
         </p>
       </div>
 
+      {/* Interactive Talkativeness Slider (0..100) */}
+      <div className="rounded-lg border border-slate-800 bg-slate-900/80 p-4 shadow">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <label
+              htmlFor="talkativeness-slider"
+              className="font-mono text-xs font-bold tracking-wider text-amber-400 uppercase"
+            >
+              Slider de ganas de hablar ({formatTwoDecimals(talkativeness)} / 100,00)
+            </label>
+            <p className="mt-0.5 text-xs text-slate-400">
+              {talkMode.label} · {idealReplyHint}
+            </p>
+          </div>
+          <span className="rounded border border-amber-500/40 bg-amber-950/30 px-2.5 py-1 font-mono text-xs font-semibold text-amber-300">
+            {talkMode.label}
+          </span>
+        </div>
+
+        <div className="mt-3 flex items-center gap-3">
+          <span className="font-mono text-[11px] text-slate-400">0,00</span>
+          <input
+            id="talkativeness-slider"
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={talkativeness}
+            onChange={(e) => onChangeTalkativeness(Number(e.target.value))}
+            className="h-2 w-full cursor-pointer accent-amber-500"
+          />
+          <span className="font-mono text-[11px] text-slate-400">100,00</span>
+        </div>
+      </div>
+
       {/* 3 Suggested responses (RF-18, RF-21, RF-22) */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {TONE_ORDER.map((tone) => {
-          const item = analysis.responses[tone];
+          const item = adaptedResponses[tone];
           const isCopied = copiedTone === tone;
           const isRegenerating = regeneratingTone === tone;
 
