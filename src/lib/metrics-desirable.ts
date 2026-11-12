@@ -21,14 +21,16 @@ import type {
 const URGENCY_WORDS_REGEX =
   /\b(urgente|ya|hoy|necesito|ahora|contestame|respondeme|si o si|s[ií] o s[ií]|cuanto antes)\b/i;
 
-const JAJA_TOKEN_REGEX = /\b(?:ja){2,}j?\b/gi;
-const FUNNY_CONTEXT_REGEX = /\b(?:ja){2,}j?\b|\b(?:jaja|xd|jijo|jsjs+)\b|[😂🤣😹]/i;
+const JAJA_TOKEN_REGEX =
+  /\b(?:(?=[aj]*j)(?=[aj]*a)[aj]{4,}|(?=[js]*j)(?=[js]*s)[js]{4,})\b/gi;
+const FUNNY_CONTEXT_REGEX =
+  /\b(?:(?=[aj]*j)(?=[aj]*a)[aj]{4,}|(?=[js]*j)(?=[js]*s)[js]{4,}|xd|jijo)\b|[😂🤣😹]/i;
 
 const GOSSIP_WORDS_REGEX =
   /\b(che|viste|no sab[eé]s|escuchame|posta|chisme|contame|sab[ií]as|te enteraste|al parecer|supuestamente)\b/gi;
 
 const AMOUNT_TOKEN_REGEX =
-  /(?:\$\s*|usd\s*|u\$s\s*|ars\s*)(\d{1,3}(?:[.,]\d{3})+|\d+(?:[.,]\d{1,2})?)|(\d{1,3}(?:[.,]\d{3})+|\d+(?:[.,]\d{1,2})?)\s*(?:pesos|lucas|usd|d[oó]lares|dolares)\b/gi;
+  /(?:\$\s*|usd\s*|u\$s\s*|ars\s*)(\d{1,3}(?:[.,]\d{3})+|\d+(?:[.,]\d{1,2})?)|(\d{1,3}(?:[.,]\d{3})+|\d+(?:[.,]\d{1,2})?)\s*(?:pesos|lucas|usd|d[oó]lares|dolares)\b|(?:sale|cuesta|vale|por|en|son|pagamos|puso)\s+(\d+(?:[.,]\d+)?)\s*k\b/gi;
 
 const DATE_HINT_REGEX =
   /\b(hoy|ma[ñn]ana|pasado ma[ñn]ana|lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|esta noche|este finde|fin de semana)\b|\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b|\b\d{1,2}:\d{2}\b/i;
@@ -204,6 +206,13 @@ export function resolvePerspectiveAuthor(
     return requested;
   }
 
+  const selfAlias = chat.participants.find((p) =>
+    /^(?:you|t[uú]|vos)$/i.test(p.trim()),
+  );
+  if (selfAlias) {
+    return selfAlias;
+  }
+
   if (chat.participants.length < 2) {
     return chat.participants[0] ?? null;
   }
@@ -312,10 +321,11 @@ function extractReceivables(chat: ParsedChat): {
 
     let match: RegExpExecArray | null;
     while ((match = regex.exec(msg.text)) !== null) {
-      const rawNumber = match[1] ?? match[2];
+      const rawNumber = match[1] ?? match[2] ?? match[3];
       if (!rawNumber) continue;
-      const isLucasUnit = /\blucas\b/i.test(match[0]);
-      const parsedAmount = parseLocalizedNumber(rawNumber, isLucasUnit);
+      const isThousandsUnit =
+        /\blucas\b/i.test(match[0]) || /\d\s*k\b/i.test(match[0]);
+      const parsedAmount = parseLocalizedNumber(rawNumber, isThousandsUnit);
       if (parsedAmount === null) continue;
 
       total += parsedAmount;

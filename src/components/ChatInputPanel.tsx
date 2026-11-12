@@ -33,11 +33,15 @@ export function ChatInputPanel({
             01 // Ingreso de Evidencia (Historial de WhatsApp)
           </h2>
           <p className="mt-0.5 text-xs text-slate-400">
-            Pegá el texto exportado con formato{" "}
+            Pegá el texto exportado en formato{" "}
             <code className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-slate-200">
               dd/mm/aa, hh:mm - Autor: mensaje
             </code>{" "}
-            o ejecutá un expediente de prueba en un clic.
+            o{" "}
+            <code className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-slate-200">
+              [hh:mm AM/PM] **Autor:** mensaje
+            </code>
+            , o ejecutá un expediente de prueba en un clic.
           </p>
         </div>
 

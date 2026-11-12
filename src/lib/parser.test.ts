@@ -81,5 +81,54 @@ describe("parseWhatsAppChat", () => {
     expect(result.data.kind).toBe("group");
     expect(result.data.participants).toHaveLength(3);
   });
+
+  it("parses Markdown WhatsApp exports with AM/PM times, quote replies, stickers, voice messages, and image captions", () => {
+    const raw = [
+      "# WhatsApp Chat Export: WachiTec",
+      "Export date: November 12, 2026 at 8:39 PM",
+      "",
+      "---",
+      "",
+      "## November 12, 2026",
+      "",
+      "[10:45 AM] **Alejo🧉Integrar:** Tuviste noticias de Pescar?",
+      "",
+      "[10:47 AM] **You:** [Sticker]",
+      "",
+      "[10:47 AM] **Cami Integrar:**",
+      "> _Alejo🧉Integrar: Tuviste noticias de Pescar?_",
+      "Sip",
+      "",
+      "[12:59 PM] **Alejo🧉Integrar:** [Voice message]",
+      "",
+      "[6:23 PM] **Cami Integrar:** _Waiting for this message. This may take a while._",
+      "",
+      "[6:40 PM] **Cami Integrar:** [Image] ES MAÑANAAAAAAA",
+      "",
+      "[7:40 PM] **You:** Ahí voy",
+      "",
+      "[8:38 PM] **mica Integrar:** JAJAJAJAJA",
+    ].join("\n");
+
+    const result = parseWhatsAppChat(raw);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.data.kind).toBe("group");
+    expect(result.data.participants).toEqual([
+      "Alejo🧉Integrar",
+      "Cami Integrar",
+      "You",
+      "mica Integrar",
+    ]);
+    expect(result.data.messages).toHaveLength(5);
+    expect(result.data.messages[0].rawDate).toBe("12/11/26");
+    expect(result.data.messages[0].rawTime).toBe("10:45");
+    expect(result.data.messages[1].text).toBe("Sip");
+    expect(result.data.messages[2].rawTime).toBe("18:40");
+    expect(result.data.messages[2].text).toBe("ES MAÑANAAAAAAA");
+    expect(result.data.audioOmittedCount).toBe(1);
+    expect(result.data.mediaOmittedCount).toBe(3);
+  });
 });
 
